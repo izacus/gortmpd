@@ -13,7 +13,7 @@ type FileInput struct {
 func readFile(file *os.File, channel chan<- byte) {
     fmt.Println("Starting read...")
 
-    buffer := make([]byte, 512)    // 512B buffer
+    buffer := make([]byte, 1024)    // 512B buffer
     var err error
     var read int
     err = nil
@@ -23,11 +23,12 @@ func readFile(file *os.File, channel chan<- byte) {
             channel <- buffer[i]
         }
     }
+    
+    fmt.Println("File done.")
 }
 
 func GetChannel(filename string) (channel <-chan byte) {
-
-    fc := make(chan byte) 
+    fc := make(chan byte, 51200) 
     fmt.Println("Attempting to open ", filename) 
     file,err := os.Open(filename)
     if err == nil {

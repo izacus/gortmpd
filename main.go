@@ -8,7 +8,7 @@ import ( "fmt"
 func main() {
     fmt.Println("goRTMPd starting...")
 
-    channel := file.GetChannel("victoria.webm")
+    channel := file.GetChannel("IrJAwCBbnuc-43.webm")
     go processor.ProcessData(channel)
 
     for {

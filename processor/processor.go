@@ -12,6 +12,14 @@ const (
     ProcessingBlocks
 )
 
+type InputStreamContext struct {
+    ebmlHeader      []byte      // EBML header
+    streamInfo      []byte      // Stored incoming stream info
+    trackInfo       []byte      // Stored incoming track info
+}
+
+var inputStream InputStreamContext
+
 func ProcessData(channel <-chan byte) {
     state := SearchingForHeader
 
@@ -27,7 +35,7 @@ func ProcessData(channel <-chan byte) {
                 }
 
                 ebmlLength, _ := getVintFromChannel(channel)
-                skipBytes(channel, ebmlLength)
+                inputStream.ebmlHeader = getBytes(channel, ebmlLength)
                 state = SearchingForSegment
 
             case SearchingForSegment:
@@ -44,7 +52,7 @@ func ProcessData(channel <-chan byte) {
                 if id == 0x549A966 {
                     state = ProcessingBlocks
                     fmt.Println("[ProcessData] Found segment info!")
-                    getSegmentInfo(channel, length)
+                    inputStream.streamInfo = getSegmentInfo(channel, length)
                 } else {
                     skipBytes(channel, length)
                 }
@@ -56,13 +64,21 @@ func ProcessData(channel <-chan byte) {
     }
 }
 
-func getSegmentInfo(channel <-chan byte, size uint64) SegmentHead {
-    var head SegmentHead
-    head.Data = getBytes(channel, size)
+func getSegmentInfo(channel <-chan byte, size uint64) []byte {
+    data := getBytes(channel, size)
     fmt.Printf("[SegmentInfo] Stored %d bytes of head.\n", size)
-    return head
+    return data
 }
 
 func processBlock(channel <-chan byte, id uint64, length uint64) {
-    skipBytes(channel, length)
+    fmt.Printf("[Block] Block ID %X size %d.\n", id, length)
+
+    switch id {
+        case 0x654AE6B:             // Track info
+            inputStream.trackInfo = getBytes(channel, length)
+            fmt.Printf("[Block] Found track info, size %dB.\n", length)
+        default:
+            skipBytes(channel, length)
+    }
+
 }
