@@ -1,7 +1,7 @@
 package processor
 
-import ( 
-    "fmt" 
+import (
+    "fmt"
 )
 
 type ProcessorStates int
@@ -11,12 +11,6 @@ const (
     SearchingForSegmentInfo
     ProcessingBlocks
 )
-
-func skipBytes(channel <-chan byte, num uint64) {
-    for i:=uint64(0); i < num; i++ {
-        <-channel
-    }
-}
 
 func ProcessData(channel <-chan byte) {
     state := SearchingForHeader
@@ -64,28 +58,8 @@ func ProcessData(channel <-chan byte) {
 
 func getSegmentInfo(channel <-chan byte, size uint64) SegmentHead {
     var head SegmentHead
-    read := uint64(0)
-
-    for read < size {
-        id, length, read_pass := getEBMLHeaderFromChannel(channel)
-        fmt.Printf("[SegmentInfo] ID %X len %d.\n", id, length)
-        read += read_pass
-
-        switch id {
-            case 0xAD7B1:   // Timecode scale
-               scale := getNumber(channel, length)
-               fmt.Println("[SegmentInfo] Timecode scale: ", scale)
-               head.TimecodeScale = scale
-            case 0xD80:
-               muxer := string(getNumber(channel, length))
-               fmt.Println("[SegmentInfo] Muxer: ", muxer)
-            default:
-               skipBytes(channel, length)
-        }
-        
-        read += length
-    }
-    
+    head.Data = getBytes(channel, size)
+    fmt.Printf("[SegmentInfo] Stored %d bytes of head.\n", size)
     return head
 }
 
