@@ -2,6 +2,7 @@ package processor
 
 import (
     "fmt"
+    "gortmpd/ebml"
 )
 
 type ProcessorStates int
@@ -27,19 +28,19 @@ func ProcessData(channel <-chan byte) {
     for {
         switch state {
             case SearchingForHeader:
-                ebmlId, _ := getVintFromChannel(channel)
+                ebmlId, _ := ebml.GetVintFromChannel(channel)
 
                 if ebmlId != 0xA45DFA3 {
                     fmt.Println("ERROR - file does not begin with an EBML!")
                     return
                 }
 
-                ebmlLength, _ := getVintFromChannel(channel)
+                ebmlLength, _ := ebml.GetVintFromChannel(channel)
                 inputStream.ebmlHeader = getBytes(channel, ebmlLength)
                 state = SearchingForSegment
 
             case SearchingForSegment:
-                id, length, _ := getEBMLHeaderFromChannel(channel)
+                id, length, _ := ebml.GetEBMLHeaderFromChannel(channel)
                 // Segment header
                 if id == 0x8538067 {
                     state = SearchingForSegmentInfo
@@ -48,7 +49,7 @@ func ProcessData(channel <-chan byte) {
                     skipBytes(channel, length)
                 }
             case SearchingForSegmentInfo:
-                id, length, _ := getEBMLHeaderFromChannel(channel)
+                id, length, _ := ebml.GetEBMLHeaderFromChannel(channel)
                 if id == 0x549A966 {
                     state = ProcessingBlocks
                     fmt.Println("[ProcessData] Found segment info!")
@@ -58,7 +59,7 @@ func ProcessData(channel <-chan byte) {
                 }
 
             case ProcessingBlocks:
-                id,length, _ := getEBMLHeaderFromChannel(channel)
+                id,length, _ := ebml.GetEBMLHeaderFromChannel(channel)
                 processBlock(channel, id, length)
         }
     }

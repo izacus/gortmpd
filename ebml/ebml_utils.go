@@ -1,18 +1,18 @@
-package processor
+package ebml
 
 import (
     "fmt"
 )
 
-func getEBMLHeaderFromChannel(channel <-chan byte) (id uint64, length uint64, read uint64) {
-    id, readId := getVintFromChannel(channel)
-    length, readLen := getVintFromChannel(channel)
+func GetEBMLHeaderFromChannel(channel <-chan byte) (id uint64, length uint64, read uint64) {
+    id, readId := GetVintFromChannel(channel)
+    length, readLen := GetVintFromChannel(channel)
     read = readId + readLen
     return
 }
 
 // Retrieves vint from channel and returns it's value and bytes read
-func getVintFromChannel(channel <-chan byte)(val uint64, read uint64) {
+func GetVintFromChannel(channel <-chan byte)(val uint64, read uint64) {
     head := <-channel
 
     switch {

@@ -3,6 +3,7 @@ package file
 import (
     "fmt"
     "os"
+    "time"
 )
 
 type FileInput struct {
@@ -22,6 +23,8 @@ func readFile(file *os.File, channel chan<- byte) {
         for i:=0; i < read; i++ {
             channel <- buffer[i]
         }
+
+        time.Sleep(1000)
     }
     
     fmt.Println("File done.")
