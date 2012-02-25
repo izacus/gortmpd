@@ -47,7 +47,36 @@ func GetVintFromChannel(channel <-chan byte)(val uint64, read uint64) {
     return val, read
 }
 
-func getNumber(channel <-chan byte, length uint64) uint64 {
+func BuildVintFromNumber(number uint64) []byte {
+    var bytes []byte
+
+    switch {
+        case number < 127:
+            bytes = make([]byte, 1)
+            bytes[0] = byte(0x80 | number)
+        case number < 16382:
+            bytes = make([]byte, 2)
+            bytes[0] = byte(0x40 | (number >> 8))
+            bytes[1] = byte(number & 0xFF)
+        case number < 2097150:
+            bytes = make([]byte, 3)
+            bytes[0] = byte(0x20 | (number >> 16))
+            bytes[1] = byte((number >> 8) & 0xFF)
+            bytes[2] = byte(number & 0xFF)
+        case number < 268435453:
+            bytes = make([]byte, 4)
+            bytes[0] = byte(0x10 | (number >> 24))
+            bytes[1] = byte((number >> 16) & 0xFF)
+            bytes[2] = byte((number >> 8) & 0xFF)
+            bytes[3] = byte(number & 0xFF)
+        default:
+            fmt.Println("ERROR - uint64 too big to do conversion!")
+    }
+
+    return bytes
+}
+
+func GetNumberFromChannel(channel <-chan byte, length uint64) uint64 {
     num := uint64(0)
 
     for i := uint64(0); i < length; i++ {

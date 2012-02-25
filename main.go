@@ -8,7 +8,6 @@ import ( "fmt"
 
 func main() {
     fmt.Println("goRTMPd starting...")
-
     channel := file.GetChannel("IrJAwCBbnuc-43.webm")
 //    dispatch_channel := make(chan byte, 10240)
 
