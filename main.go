@@ -9,10 +9,10 @@ import ( "fmt"
 func main() {
     fmt.Println("goRTMPd starting...")
     channel := file.GetChannel("IrJAwCBbnuc-43.webm")
-//    dispatch_channel := make(chan byte, 10240)
+    dispatch_channel := make(chan dispatcher.DispatchPacket, 10240)
 
-    go processor.ProcessData(channel)   
-    go dispatcher.DispatchPackets()
+    go processor.ProcessData(channel, dispatch_channel)   
+    go dispatcher.DispatchPackets(dispatch_channel)
 
     for {
         time.Sleep(10000000000)

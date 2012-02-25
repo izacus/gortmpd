@@ -3,6 +3,7 @@ package processor
 import (
     "fmt"
     "gortmpd/webm"
+    "gortmpd/dispatcher"
 )
 
 type ProcessorStates int
@@ -13,7 +14,7 @@ const (
     ProcessingBlocks
 )
 
-func ProcessData(channel <-chan byte) {
+func ProcessData(channel <-chan byte, dispatch_channel chan<- dispatcher.DispatchPacket) {
     state := SearchingForHeader
 
     // Loop forever
@@ -26,7 +27,6 @@ func ProcessData(channel <-chan byte) {
                     fmt.Println("ERROR - file does not begin with an EBML!")
                     return
                 }
-
                 ebmlLength, _ := webm.GetVintFromChannel(channel)
                 webm.InputStream.SetEBMLHeader(getBytes(channel, ebmlLength))
                 state = SearchingForSegment
@@ -52,9 +52,17 @@ func ProcessData(channel <-chan byte) {
 
             case ProcessingBlocks:
                 id,length, _ := webm.GetEBMLHeaderFromChannel(channel)
-                processBlock(channel, id, length)
+                processBlock(channel, dispatch_channel, id, length)
         }
     }
+}
+
+func dispatchPacket(channel chan<- dispatcher.DispatchPacket, id uint64, length uint64, data []byte) {
+    var packet dispatcher.DispatchPacket
+    packet.Id = id
+    packet.Length = length
+    packet.Data = data
+    channel <- packet
 }
 
 func getSegmentInfo(channel <-chan byte, size uint64) []byte {
@@ -63,7 +71,7 @@ func getSegmentInfo(channel <-chan byte, size uint64) []byte {
     return data
 }
 
-func processBlock(channel <-chan byte, id uint64, length uint64) {
+func processBlock(channel <-chan byte, dispatch_channel chan<- dispatcher.DispatchPacket, id uint64, length uint64) {
     fmt.Printf("[Block] Block ID %X size %d.\n", id, length)
 
     switch id {
@@ -71,7 +79,8 @@ func processBlock(channel <-chan byte, id uint64, length uint64) {
             webm.InputStream.SetTrackInfo(getBytes(channel, length))
             fmt.Printf("[Block] Found track info, size %dB.\n", length)
         default:
-            skipBytes(channel, length)
+            data := getBytes(channel, length)
+            dispatchPacket(dispatch_channel, id, length, data)
     }
 
 }

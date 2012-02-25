@@ -50,9 +50,16 @@ func GetVintFromChannel(channel <-chan byte)(val uint64, read uint64) {
 func BuildVintFromNumber(number uint64) []byte {
     var bytes []byte
 
+    // Check for reserved special value and don't attempt conversion
+    if number == 0xFFFFFFFFFFFFFFFF {
+        bytes = make([]byte, 1)
+        bytes[0] = 0xFF
+        return bytes
+    }
+
     switch {
         case number < 127:
-            bytes = make([]byte, 1)
+            bytes = make([]byte, 2)
             bytes[0] = byte(0x80 | number)
         case number < 16382:
             bytes = make([]byte, 2)
