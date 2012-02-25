@@ -78,6 +78,7 @@ func BuildVintFromNumber(number uint64) []byte {
             bytes[3] = byte(number & 0xFF)
         default:
             fmt.Println("ERROR - uint64 too big to do conversion!")
+            panic(nil)
     }
 
     return bytes

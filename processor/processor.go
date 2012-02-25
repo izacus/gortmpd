@@ -82,6 +82,9 @@ func getSegmentInfo(channel <-chan byte, size uint64) []byte {
     return data
 }
 
+
+var drop = 10
+
 func processBlock(context *webm.Context, id uint64, length uint64) {
     fmt.Printf("[Block] Block ID %X size %d.\n", id, length)
 
@@ -92,6 +95,12 @@ func processBlock(context *webm.Context, id uint64, length uint64) {
             fmt.Printf("[Block] Found track info, size %dB.\n", length)
         default:
             data := getBytes(context.InputChannel, length)
+
+            if drop > 0 {
+                drop--
+                return
+            }
+
             dispatchPacket(context.DispatchChannel, id, length, data)
     }
 

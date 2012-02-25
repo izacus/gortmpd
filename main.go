@@ -2,6 +2,7 @@ package main
 
 import ( "fmt"
          "time"
+         "os"
          "gortmpd/processor"
          "gortmpd/dispatcher"
          "gortmpd/io"
@@ -10,7 +11,13 @@ import ( "fmt"
 
 func main() {
     fmt.Println("goRTMPd starting...")
-    channel := file.GetInputChannel("victoria.webm")
+
+    if len(os.Args) < 2 {
+        fmt.Printf("Usage: %s <input_file>\n", os.Args[0])
+        return
+    }
+
+    channel := file.GetInputChannel(os.Args[1])
     dispatch_channel := make(chan webm.DispatchPacket, 10240)
 
     var context webm.Context
