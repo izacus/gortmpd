@@ -3,7 +3,6 @@ package file
 import (
     "fmt"
     "os"
-    "time"
 )
 
 type FileInput struct {
@@ -23,14 +22,27 @@ func readFile(file *os.File, channel chan<- byte) {
         for i:=0; i < read; i++ {
             channel <- buffer[i]
         }
-
-        time.Sleep(1000)
     }
     
     fmt.Println("File done.")
 }
 
-func GetChannel(filename string) (channel <-chan byte) {
+func writeFile(file *os.File, channel <-chan byte) {
+    var err error
+    err = nil
+
+    buffer := make([]byte, 1024)
+    for err == nil {
+        for i := 0; i < 1024; i++ {
+            buffer[i] = <- channel
+        }
+
+        file.Write(buffer)
+        file.Sync()
+    }
+}
+
+func GetInputChannel(filename string) (channel <-chan byte) {
     fc := make(chan byte, 51200) 
     fmt.Println("Attempting to open ", filename) 
     file,err := os.Open(filename)
@@ -38,6 +50,20 @@ func GetChannel(filename string) (channel <-chan byte) {
         go readFile(file, fc)
     } else {
         fmt.Println("ERROR opening file!")
+        return nil
+    }
+
+    return fc
+}
+
+func GetOutputChannel(filename string) (channel chan<- byte) {
+    fc := make(chan byte, 51200)
+    file,err := os.Create(filename)
+
+    if err == nil {
+        go writeFile(file, fc)
+    } else {
+        fmt.Println("ERROR opening output file!")
         return nil
     }
 

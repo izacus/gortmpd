@@ -3,7 +3,6 @@ package processor
 import (
     "fmt"
     "gortmpd/webm"
-    "gortmpd/dispatcher"
 )
 
 type ProcessorStates int
@@ -14,51 +13,60 @@ const (
     ProcessingBlocks
 )
 
-func ProcessData(channel <-chan byte, dispatch_channel chan<- dispatcher.DispatchPacket) {
+func ProcessData(context webm.Context) {
     state := SearchingForHeader
 
     // Loop forever
     for {
         switch state {
             case SearchingForHeader:
-                ebmlId, _ := webm.GetVintFromChannel(channel)
+                ebmlId, _ := webm.GetVintFromChannel(context.InputChannel)
 
                 if ebmlId != 0xA45DFA3 {
                     fmt.Println("ERROR - file does not begin with an EBML!")
                     return
                 }
-                ebmlLength, _ := webm.GetVintFromChannel(channel)
-                webm.InputStream.SetEBMLHeader(getBytes(channel, ebmlLength))
+                ebmlLength, _ := webm.GetVintFromChannel(context.InputChannel)
+                context.InputStream.SetEBMLHeader(getBytes(context.InputChannel, ebmlLength))
+
+                fmt.Println("Input stream ", context.InputStream)
+                dispatchPacket(context.DispatchChannel, ebmlId, ebmlLength, context.InputStream.GetEBMLHeader())
+
                 state = SearchingForSegment
 
             case SearchingForSegment:
-                id, length, _ := webm.GetEBMLHeaderFromChannel(channel)
+                id, length, _ := webm.GetEBMLHeaderFromChannel(context.InputChannel)
                 // Segment header
                 if id == 0x8538067 {
                     state = SearchingForSegmentInfo
                     fmt.Printf("[ProcessData] Found segment, length %d bytes.\n", length)
+
+                    dispatchPacket(context.DispatchChannel, id, length, nil)
                 } else {
-                    skipBytes(channel, length)
+                    skipBytes(context.InputChannel, length)
                 }
             case SearchingForSegmentInfo:
-                id, length, _ := webm.GetEBMLHeaderFromChannel(channel)
+                id, length, _ := webm.GetEBMLHeaderFromChannel(context.InputChannel)
                 if id == 0x549A966 {
                     state = ProcessingBlocks
                     fmt.Println("[ProcessData] Found segment info!")
-                    webm.InputStream.SetStreamInfo(getSegmentInfo(channel, length))
+                    context.InputStream.SetStreamInfo(getSegmentInfo(context.InputChannel, length))
+
+                    dispatchPacket(context.DispatchChannel, id, length, context.InputStream.GetStreamInfo())
+
                 } else {
-                    skipBytes(channel, length)
+                    skipBytes(context.InputChannel, length)
                 }
 
             case ProcessingBlocks:
-                id,length, _ := webm.GetEBMLHeaderFromChannel(channel)
-                processBlock(channel, dispatch_channel, id, length)
+                id,length, _ := webm.GetEBMLHeaderFromChannel(context.InputChannel)
+                processBlock(context, id, length)
         }
     }
 }
 
-func dispatchPacket(channel chan<- dispatcher.DispatchPacket, id uint64, length uint64, data []byte) {
-    var packet dispatcher.DispatchPacket
+func dispatchPacket(channel chan<- webm.DispatchPacket, id uint64, length uint64, data []byte) {
+    var packet webm.DispatchPacket
     packet.Id = id
     packet.Length = length
     packet.Data = data
@@ -71,16 +79,17 @@ func getSegmentInfo(channel <-chan byte, size uint64) []byte {
     return data
 }
 
-func processBlock(channel <-chan byte, dispatch_channel chan<- dispatcher.DispatchPacket, id uint64, length uint64) {
+func processBlock(context webm.Context, id uint64, length uint64) {
     fmt.Printf("[Block] Block ID %X size %d.\n", id, length)
 
     switch id {
         case 0x654AE6B:             // Track info
-            webm.InputStream.SetTrackInfo(getBytes(channel, length))
+            context.InputStream.SetTrackInfo(getBytes(context.InputChannel, length))
+            dispatchPacket(context.DispatchChannel, id, length, context.InputStream.GetTrackInfo())
             fmt.Printf("[Block] Found track info, size %dB.\n", length)
         default:
-            data := getBytes(channel, length)
-            dispatchPacket(dispatch_channel, id, length, data)
+            data := getBytes(context.InputChannel, length)
+            dispatchPacket(context.DispatchChannel, id, length, data)
     }
 
 }
