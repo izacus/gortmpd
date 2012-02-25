@@ -59,7 +59,7 @@ func BuildVintFromNumber(number uint64) []byte {
 
     switch {
         case number < 127:
-            bytes = make([]byte, 2)
+            bytes = make([]byte, 1)
             bytes[0] = byte(0x80 | number)
         case number < 16382:
             bytes = make([]byte, 2)

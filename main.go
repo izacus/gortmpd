@@ -10,7 +10,7 @@ import ( "fmt"
 
 func main() {
     fmt.Println("goRTMPd starting...")
-    channel := file.GetInputChannel("IrJAwCBbnuc-43.webm")
+    channel := file.GetInputChannel("victoria.webm")
     dispatch_channel := make(chan webm.DispatchPacket, 10240)
 
     var context webm.Context

@@ -30,16 +30,13 @@ func readFile(file *os.File, channel chan<- byte) {
 func writeFile(file *os.File, channel <-chan byte) {
     var err error
     err = nil
-
-    buffer := make([]byte, 1024)
     for err == nil {
-        for i := 0; i < 1024; i++ {
-            buffer[i] = <- channel
-        }
-
-        file.Write(buffer)
-        file.Sync()
+        buf := make([]byte, 1)
+        buf[0] = <-channel
+        file.Write(buf)
     }
+
+    fmt.Printf("[File] ERR: %s\n", err)
 }
 
 func GetInputChannel(filename string) (channel <-chan byte) {

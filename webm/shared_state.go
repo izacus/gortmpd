@@ -65,13 +65,19 @@ type DispatchPacket struct {
 }
 
 func (dp *DispatchPacket) GetByteRepresentation() []byte {
-	fmt.Printf("[Packet] ID: %X Len: %d Data len: %d", dp.Id, dp.Length, len(dp.Data))
+	fmt.Printf("[Packet] ID: %X Len: %d Data len: %d\n", dp.Id, dp.Length, len(dp.Data))
 
 	id_bytes := BuildVintFromNumber(dp.Id)
 	length_bytes := BuildVintFromNumber(dp.Length)
+
+	fmt.Printf("ID bytes: %X length bytes: %X\n", id_bytes, length_bytes)
+
 	var bytes = make([]byte, len(id_bytes) + len(length_bytes) + len(dp.Data))
 	copy(bytes, id_bytes)
 	copy(bytes[len(id_bytes):], length_bytes)
-	copy(bytes[len(id_bytes)+len(length_bytes):], dp.Data)
+	if len(dp.Data) > 0 {
+		copy(bytes[len(id_bytes)+len(length_bytes):], dp.Data)
+	}
+
 	return bytes
 }

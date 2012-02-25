@@ -44,6 +44,7 @@ func ProcessData(context *webm.Context) {
 
                     dispatchPacket(context.DispatchChannel, id, 0xFFFFFFFFFFFFFFFF, nil)
                 } else {
+                    fmt.Printf("[ProcessData] Skipped %X.\n", id)
                     skipBytes(context.InputChannel, length)
                 }
             case SearchingForSegmentInfo:
@@ -56,6 +57,7 @@ func ProcessData(context *webm.Context) {
                     dispatchPacket(context.DispatchChannel, id, length, *context.InputStream.GetStreamInfo())
 
                 } else {
+                    fmt.Printf("[ProcessData] Skipped %X.\n", id)
                     skipBytes(context.InputChannel, length)
                 }
 
