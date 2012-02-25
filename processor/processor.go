@@ -13,8 +13,10 @@ const (
     ProcessingBlocks
 )
 
+var state ProcessorStates
+
 func ProcessData(context *webm.Context) {
-    state := SearchingForHeader
+    state = SearchingForHeader
 
     // Loop forever
     for {
@@ -93,6 +95,11 @@ func processBlock(context *webm.Context, id uint64, length uint64) {
             context.InputStream.SetTrackInfo(getBytes(context.InputChannel, length))
             dispatchPacket(context.DispatchChannel, id, length, *context.InputStream.GetTrackInfo())
             fmt.Printf("[Block] Found track info, size %dB.\n", length)
+
+        case 0xA45DFA3:
+            fmt.Println("[Block] Found EBML, resetting processor for new input!")
+            skipBytes(context.InputChannel, length)
+            state = SearchingForSegment
         default:
             data := getBytes(context.InputChannel, length)
 

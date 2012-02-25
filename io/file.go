@@ -13,18 +13,21 @@ type FileInput struct {
 func readFile(file *os.File, channel chan<- byte) {
     fmt.Println("Starting read...")
 
-    buffer := make([]byte, 1024)    // 512B buffer
-    var err error
-    var read int
-    err = nil
-    for err == nil {
-        read, err = file.Read(buffer) 
-        for i:=0; i < read; i++ {
-            channel <- buffer[i]
+    for {
+        buffer := make([]byte, 1024)    // 512B buffer
+        var err error
+        var read int
+        err = nil
+        for err == nil {
+            read, err = file.Read(buffer) 
+            for i:=0; i < read; i++ {
+                channel <- buffer[i]
+            }
         }
+        
+        fmt.Println("File done.")
+        file.Seek(0, 0) // Infinite repeat
     }
-    
-    fmt.Println("File done.")
 }
 
 func writeFile(file *os.File, channel <-chan byte) {
