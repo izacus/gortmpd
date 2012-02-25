@@ -14,47 +14,47 @@ type Context struct {
 
 // Context of an input stream
 type InputStreamContext struct {
-    ebmlHeader      []byte      // EBML header
-    streamInfo      []byte      // Stored incoming stream info
-    trackInfo       []byte      // Stored incoming track info
+    ebmlHeader      *[]byte      // EBML header
+    streamInfo      *[]byte      // Stored incoming stream info
+    trackInfo       *[]byte      // Stored incoming track info
 
     mu				sync.RWMutex
 }
 
-func (isc InputStreamContext) GetEBMLHeader() (header []byte) {
+func (isc *InputStreamContext) GetEBMLHeader() (header *[]byte) {
 	isc.mu.RLock()
 	defer isc.mu.RUnlock()
 	return isc.ebmlHeader
 }
 
-func (isc InputStreamContext) GetStreamInfo() (info []byte) {
+func (isc *InputStreamContext) GetStreamInfo() (info *[]byte) {
 	isc.mu.RLock()
 	defer isc.mu.RUnlock()
 	return isc.streamInfo
 }
 
-func (isc InputStreamContext) GetTrackInfo() (trackInfo []byte) {
+func (isc *InputStreamContext) GetTrackInfo() (trackInfo *[]byte) {
 	isc.mu.RLock()
 	defer isc.mu.RUnlock()
 	return isc.trackInfo
 }
 
 
-func (isc InputStreamContext) SetEBMLHeader(header []byte) {
+func (isc *InputStreamContext) SetEBMLHeader(header []byte) {
 	isc.mu.Lock()
-	isc.ebmlHeader = header
+	isc.ebmlHeader = &header
 	isc.mu.Unlock()
 }
 
-func (isc InputStreamContext) SetStreamInfo(info []byte) {
+func (isc *InputStreamContext) SetStreamInfo(info []byte) {
 	isc.mu.Lock()
-	isc.streamInfo = info
+	isc.streamInfo = &info
 	isc.mu.Unlock()
 }
 
-func (isc InputStreamContext) SetTrackInfo(trackInfo []byte) {
+func (isc *InputStreamContext) SetTrackInfo(trackInfo []byte) {
 	isc.mu.Lock()
-	isc.trackInfo = trackInfo
+	isc.trackInfo = &trackInfo
 	isc.mu.Unlock()
 }
 
@@ -64,10 +64,8 @@ type DispatchPacket struct {
 	Data    []byte		// Packet data
 }
 
-func (dp DispatchPacket) GetByteRepresentation() []byte {
-
-	fmt.Printf("[Packet] ID: %X Len: %d Data: %X", dp.Id, dp.Length, dp.Data)
-	panic(nil)
+func (dp *DispatchPacket) GetByteRepresentation() []byte {
+	fmt.Printf("[Packet] ID: %X Len: %d Data len: %d", dp.Id, dp.Length, len(dp.Data))
 
 	id_bytes := BuildVintFromNumber(dp.Id)
 	length_bytes := BuildVintFromNumber(dp.Length)

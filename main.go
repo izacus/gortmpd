@@ -17,7 +17,7 @@ func main() {
     context.InputChannel = channel
     context.DispatchChannel = dispatch_channel
 
-    go processor.ProcessData(context)   
+    go processor.ProcessData(&context)   
     go dispatcher.DispatchPackets(context)
 
     for {
