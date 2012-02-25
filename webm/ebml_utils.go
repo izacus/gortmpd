@@ -1,4 +1,4 @@
-package ebml
+package webm
 
 import (
     "fmt"

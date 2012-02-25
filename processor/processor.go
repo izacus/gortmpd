@@ -2,7 +2,7 @@ package processor
 
 import (
     "fmt"
-    "gortmpd/ebml"
+    "gortmpd/webm"
 )
 
 type ProcessorStates int
@@ -13,14 +13,6 @@ const (
     ProcessingBlocks
 )
 
-type InputStreamContext struct {
-    ebmlHeader      []byte      // EBML header
-    streamInfo      []byte      // Stored incoming stream info
-    trackInfo       []byte      // Stored incoming track info
-}
-
-var inputStream InputStreamContext
-
 func ProcessData(channel <-chan byte) {
     state := SearchingForHeader
 
@@ -28,19 +20,19 @@ func ProcessData(channel <-chan byte) {
     for {
         switch state {
             case SearchingForHeader:
-                ebmlId, _ := ebml.GetVintFromChannel(channel)
+                ebmlId, _ := webm.GetVintFromChannel(channel)
 
                 if ebmlId != 0xA45DFA3 {
                     fmt.Println("ERROR - file does not begin with an EBML!")
                     return
                 }
 
-                ebmlLength, _ := ebml.GetVintFromChannel(channel)
-                inputStream.ebmlHeader = getBytes(channel, ebmlLength)
+                ebmlLength, _ := webm.GetVintFromChannel(channel)
+                webm.InputStream.SetEBMLHeader(getBytes(channel, ebmlLength))
                 state = SearchingForSegment
 
             case SearchingForSegment:
-                id, length, _ := ebml.GetEBMLHeaderFromChannel(channel)
+                id, length, _ := webm.GetEBMLHeaderFromChannel(channel)
                 // Segment header
                 if id == 0x8538067 {
                     state = SearchingForSegmentInfo
@@ -49,17 +41,17 @@ func ProcessData(channel <-chan byte) {
                     skipBytes(channel, length)
                 }
             case SearchingForSegmentInfo:
-                id, length, _ := ebml.GetEBMLHeaderFromChannel(channel)
+                id, length, _ := webm.GetEBMLHeaderFromChannel(channel)
                 if id == 0x549A966 {
                     state = ProcessingBlocks
                     fmt.Println("[ProcessData] Found segment info!")
-                    inputStream.streamInfo = getSegmentInfo(channel, length)
+                    webm.InputStream.SetStreamInfo(getSegmentInfo(channel, length))
                 } else {
                     skipBytes(channel, length)
                 }
 
             case ProcessingBlocks:
-                id,length, _ := ebml.GetEBMLHeaderFromChannel(channel)
+                id,length, _ := webm.GetEBMLHeaderFromChannel(channel)
                 processBlock(channel, id, length)
         }
     }
@@ -76,7 +68,7 @@ func processBlock(channel <-chan byte, id uint64, length uint64) {
 
     switch id {
         case 0x654AE6B:             // Track info
-            inputStream.trackInfo = getBytes(channel, length)
+            webm.InputStream.SetTrackInfo(getBytes(channel, length))
             fmt.Printf("[Block] Found track info, size %dB.\n", length)
         default:
             skipBytes(channel, length)
