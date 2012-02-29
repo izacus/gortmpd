@@ -5,7 +5,7 @@ import ( "fmt"
          "os"
          "gortmpd/processor"
          "gortmpd/dispatcher"
-         "gortmpd/io"
+         "gortmpd/file"
          "gortmpd/webm"
           )
 

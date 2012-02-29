@@ -1,7 +1,7 @@
 package dispatcher
 
 import (
-	"gortmpd/io"
+	"gortmpd/file"
 	"gortmpd/webm"
 )
 

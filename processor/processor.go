@@ -82,9 +82,6 @@ func getSegmentInfo(channel <-chan byte, size uint64) []byte {
     return data
 }
 
-
-var drop = 10
-
 func processBlock(context *webm.Context, id uint64, length uint64) {
     fmt.Printf("[Block] Block ID %X size %d.\n", id, length)
 
@@ -93,15 +90,11 @@ func processBlock(context *webm.Context, id uint64, length uint64) {
             context.InputStream.SetTrackInfo(getBytes(context.InputChannel, length))
             dispatchPacket(context.DispatchChannel, id, length, *context.InputStream.GetTrackInfo())
             fmt.Printf("[Block] Found track info, size %dB.\n", length)
+        case 0xF43B675:
+            dispatchPacket(context.DispatchChannel, id, length, getBytes(context.InputChannel, length))
         default:
-            data := getBytes(context.InputChannel, length)
-
-            if drop > 0 {
-                drop--
-                return
-            }
-
-            dispatchPacket(context.DispatchChannel, id, length, data)
+            skipBytes(context.InputChannel, length)
+            fmt.Printf("[Block] Skipping block ID %X length %d.\n", id, length)
     }
 
 }
