@@ -8,8 +8,7 @@ import ( "fmt"
          "gortmpd/file"
          "gortmpd/webm" 
          "gortmpd/web"
-         
-          )
+)
 
 func main() {
     fmt.Println("goRTMPd starting...")
