@@ -5,7 +5,7 @@ import (
 	"gortmpd/webm"
 )
 
-func DispatchPackets(context webm.Context) {
+func DispatchPackets(context *webm.Context) {
 	output_chan := file.GetOutputChannel("output.webm")
 
 	for {
