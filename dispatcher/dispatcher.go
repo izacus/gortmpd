@@ -1,11 +1,11 @@
 package dispatcher
 
 import (
-	"gortmpd/io"
+	"gortmpd/file"
 	"gortmpd/webm"
 )
 
-func DispatchPackets(context webm.Context) {
+func DispatchPackets(context *webm.Context) {
 	output_chan := file.GetOutputChannel("output.webm")
 
 	for {

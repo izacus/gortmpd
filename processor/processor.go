@@ -33,8 +33,6 @@ func ProcessData(context *webm.Context) {
                 context.InputStream.SetEBMLHeader(getBytes(context.InputChannel, ebmlLength))
 
                 fmt.Println("Input stream ", context.InputStream)
-                dispatchPacket(context.DispatchChannel, ebmlId, ebmlLength, *context.InputStream.GetEBMLHeader())
-
                 state = SearchingForSegment
 
             case SearchingForSegment:
@@ -55,9 +53,6 @@ func ProcessData(context *webm.Context) {
                     state = ProcessingBlocks
                     fmt.Println("[ProcessData] Found segment info!")
                     context.InputStream.SetStreamInfo(getSegmentInfo(context.InputChannel, length))
-
-                    dispatchPacket(context.DispatchChannel, id, length, *context.InputStream.GetStreamInfo())
-
                 } else {
                     fmt.Printf("[ProcessData] Skipped %X.\n", id)
                     skipBytes(context.InputChannel, length)
@@ -84,31 +79,24 @@ func getSegmentInfo(channel <-chan byte, size uint64) []byte {
     return data
 }
 
-
-var drop = 10
-
 func processBlock(context *webm.Context, id uint64, length uint64) {
     fmt.Printf("[Block] Block ID %X size %d.\n", id, length)
 
     switch id {
         case 0x654AE6B:             // Track info
             context.InputStream.SetTrackInfo(getBytes(context.InputChannel, length))
-            dispatchPacket(context.DispatchChannel, id, length, *context.InputStream.GetTrackInfo())
             fmt.Printf("[Block] Found track info, size %dB.\n", length)
 
         case 0xA45DFA3:
             fmt.Println("[Block] Found EBML, resetting processor for new input!")
             skipBytes(context.InputChannel, length)
             state = SearchingForSegment
+
+        case 0xF43B675:
+            dispatchPacket(context.DispatchChannel, id, length, getBytes(context.InputChannel, length))
         default:
-            data := getBytes(context.InputChannel, length)
-
-            if drop > 0 {
-                drop--
-                return
-            }
-
-            dispatchPacket(context.DispatchChannel, id, length, data)
+            skipBytes(context.InputChannel, length)
+            fmt.Printf("[Block] Skipping block ID %X length %d.\n", id, length)
     }
 
 }

@@ -31,16 +31,18 @@ func readFile(file *os.File, channel chan<- byte) {
 }
 
 func writeFile(file *os.File, channel <-chan byte) {
+    fmt.Println("Starting write...")
     var err error
     err = nil
 
-    buffer := make([]byte, 5024)
+    buffer := make([]byte, 1024)
     for err == nil {
-        for i := 0; i < 5024; i++ {
+        for i := 0; i < 1024; i++ {
             buffer[i] = <- channel
         }
 
         file.Write(buffer)
+        file.Sync()
     }
 }
 
